@@ -24,7 +24,9 @@ To enable this requirement, a second repository that will be developed in tandem
 
 ### Discussion Board
 
-The current plan is to use the discussion board to outline ideas or strategies for implementation. This can be adjusting in the future.
+The current plan is to use [the discussion board](https://github.com/CCranney/JEPA-chess/discussions) to outline ideas or strategies for implementation. This can be adjusted in the future.
+
+
 
 ## Conclusion
 
