@@ -1,0 +1,1 @@
+ALL_PIECES = 'XpPrRnNbBqQkK' # X indicates a captured (blank) piece.
