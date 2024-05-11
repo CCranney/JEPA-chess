@@ -43,41 +43,62 @@ def load_game_moves_from_kaggle_dataset(filePath, maxGames):
         move_lists.append(moves)
     return move_lists
 
-def process_board_state(strings):
-    piece_indices = [i for i, s in enumerate(strings) if s != '.']
-    piece_coordinates = [(i // 8, i % 8) for i in piece_indices]
-    numeric_pieces = {s: i for i, s in enumerate(ALL_PIECES)}
-    numeric_representation = torch.full((3,32), fill_value=0, dtype=torch.int32) # the first "piece" token is for captured pieces (X). These will be masked.
-    for i, (letter, number) in enumerate(piece_coordinates):
-        insert = torch.tensor([numeric_pieces[strings[piece_indices[i]]], letter, number], dtype=torch.int32)
-        numeric_representation[:, i].scatter_(dim=0, index=torch.arange(3), src=insert)
-    return numeric_representation
-
 def process_moves_into_board_state_transitions(list_of_moves_per_game):
     X, Y, Z = [], [], []
     for i in range(len(list_of_moves_per_game)):
-        board = chess.Board()
         try:
+            board = chess.Board()
+            piece_tracker = create_piece_tracker(board)
             for move in list_of_moves_per_game[i]:
                 move_obj = board.parse_san(move)
                 Z.append(convert_move_to_tensor(move_obj))
-                premoveState = convert_board_to_state(board)
-                X.append(process_board_state(premoveState))
+                assert sorted(piece_tracker) == sorted(create_piece_tracker(board))
+                X.append(process_pieces_for_model(piece_tracker))
                 board.push(move_obj)
-                postmoveState = convert_board_to_state(board)
-                Y.append(process_board_state(postmoveState))
+                piece_tracker = update_piece_tracker(piece_tracker, board, move_obj)
+                Y.append(process_pieces_for_model(piece_tracker))
         except:
             continue
     return torch.stack(X), torch.stack(Y), torch.stack(Z)
-
-def convert_board_to_state(board):
-    return list(
-        "".join(["." * int(char) if char.isdigit() else char for char in board.fen().replace("/", "")])[:64]
-    )
 
 def convert_move_to_tensor(move):
     letters = 'abcdefgh'
     coordinates = list(str(move))
     return torch.tensor([letters.index(coordinates[0]), int(coordinates[1])-1, letters.index(coordinates[2]), int(coordinates[3])-1], dtype=torch.int32)
 
+def convert_board_to_state(board):
+    return list(
+        "".join(["." * int(char) if char.isdigit() else char for char in board.fen().replace("/", "")])[:64]
+    )
 
+def process_pieces_for_model(piece_tracker):
+    numeric_pieces = {s: i for i, s in enumerate(ALL_PIECES)}
+    piece_values = [(numeric_pieces[piece], position // 8, position % 8) for piece, position in piece_tracker]
+    return_value = torch.tensor(piece_values, dtype=torch.int32)
+    return return_value
+
+def create_piece_tracker(board, final_length=32):
+    piece_tracker = []
+    boardState = convert_board_to_state(board)
+    for i, piece in enumerate(boardState):
+        if piece=='.': continue
+        piece_tracker.append((piece, i))
+    for i in range(32-len(piece_tracker)):
+        piece_tracker.append(('X',0)) # indicates captured pieces
+    return piece_tracker
+
+def update_piece_tracker(piece_tracker, board, move):
+    temp_piece_tracker = create_piece_tracker(board)
+    changed_indices = [i for i, piece_and_position in enumerate(piece_tracker) if piece_and_position not in temp_piece_tracker]
+    new_piece_states = set(temp_piece_tracker) - set(piece_tracker)
+    new_piece_states_dict = {piece_and_position[0]:piece_and_position for piece_and_position in new_piece_states}
+    for i in changed_indices:
+        if piece_tracker[i][0] in new_piece_states_dict:
+            piece_tracker[i] = new_piece_states_dict[piece_tracker[i][0]]
+        elif str(move)[-1] in ['q','r','n','b'] and piece_tracker[i][0] == 'p': # promoting
+            piece_tracker[i] = new_piece_states_dict[str(move)[-1]]
+        elif str(move)[-1] in ['q','r','n','b'] and piece_tracker[i][0] == 'P': # promoting
+            piece_tracker[i] = new_piece_states_dict[str(move)[-1].upper()]
+        else:
+            piece_tracker[i] = ('X',0) # captured
+    return piece_tracker

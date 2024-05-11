@@ -14,7 +14,6 @@ class PieceEmbedding(nn.Module):
         self.register_buffer('pe', create_positional_encoding_lookup(boardLength, d_model))
 
     def forward(self, x):
-        x = x.permute(0, 2, 1)
         tokens = x[:, :, 0]
         first_axis_position = x[:, :, 1]
         second_axis_position = x[:, :, 2]
