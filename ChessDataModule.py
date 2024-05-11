@@ -64,7 +64,7 @@ def process_moves_into_board_state_transitions(list_of_moves_per_game):
 def convert_move_to_tensor(move):
     letters = 'abcdefgh'
     coordinates = list(str(move))
-    return torch.tensor([letters.index(coordinates[0]), int(coordinates[1])-1, letters.index(coordinates[2]), int(coordinates[3])-1], dtype=torch.int32)
+    return torch.tensor([letters.index(coordinates[0]), int(coordinates[1])-1, letters.index(coordinates[2]), int(coordinates[3])-1], dtype=torch.float32)
 
 def convert_board_to_state(board):
     return list(
