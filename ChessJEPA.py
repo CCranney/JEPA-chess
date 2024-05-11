@@ -1,5 +1,6 @@
 from abstractjepa import JEPA
 import pytorch_lightning as pl
+import torch
 
 class ChessJEPA(JEPA, pl.LightningModule):
     def __init__(self, context_encoder, predictor, loss_calculator, board_state_embedder):
@@ -19,8 +20,9 @@ class ChessJEPA(JEPA, pl.LightningModule):
         predicted_encoded_y = predicted_encoded_y_flat.view(-1, encoded_x.shape[-2], encoded_x.shape[-1])
         return predicted_encoded_y
 
-    def get_loss(self, encoded_y, encoded_yhat, z=None):
-        pass
+    def get_loss(self, encoded_x, encoded_y, predicted_encoded_y):
+        variance_loss, covariance_loss, invariance_loss = self.loss_calculators['vicreg'].calculate_VICReg_loss(encoded_x, encoded_y, predicted_encoded_y)
+        return variance_loss + covariance_loss + invariance_loss
 
     def forward(self, x, z):
         embedded_x = self.board_state_embedder(x)
@@ -30,13 +32,17 @@ class ChessJEPA(JEPA, pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y, z = batch
-        encoded_x = self(x)
-        pass
+        encoded_x, predicted_encoded_y = self(x, z)
+        encoded_y = self.encode_y(self.board_state_embedder(y))
+        loss = self.get_loss(encoded_x, encoded_y, predicted_encoded_y)
+        return loss
 
     def validation_step(self, batch, batch_idx):
         x, y, z = batch
-        encoded_x = self(x)
-        pass
+        encoded_x, predicted_encoded_y = self(x, z)
+        encoded_y = self.encode_y(self.board_state_embedder(y))
+        loss = self.get_loss(encoded_x, encoded_y, predicted_encoded_y)
+        return loss
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
