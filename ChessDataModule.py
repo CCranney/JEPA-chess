@@ -22,8 +22,6 @@ class ChessDataModule(pl.LightningDataModule):
         indices = torch.arange(len(self.X)).long()
         train_indices = indices[:num_training_samples].detach().cpu().numpy()
         val_indices = indices[num_training_samples:].detach().cpu().numpy()
-
-        # Separate features and targets for both datasets
         self.train_dataset = TensorDataset(self.X[train_indices], self.Y[train_indices], self.Z[train_indices])
         self.val_dataset = TensorDataset(self.X[val_indices], self.Y[val_indices], self.Z[val_indices])
 

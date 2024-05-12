@@ -14,7 +14,7 @@ def run_passthrough_job():
     action_size = 4
     num_pieces = 32
     expansion_scale = 4
-    encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=8)
+    encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=8, batch_first=True)
     transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=6)
     predictor = nn.RNNCell(input_size=action_size, hidden_size=32*d_model)
     expander = nn.Linear(num_pieces*d_model, num_pieces*d_model*expansion_scale)

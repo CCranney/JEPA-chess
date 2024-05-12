@@ -13,13 +13,14 @@ class PieceEmbedding(nn.Module):
         boardLength = 8
         self.register_buffer('pe', create_positional_encoding_lookup(boardLength, d_model))
 
-    def forward(self, x):
+    def forward(self, x, pad=0):
         tokens = x[:, :, 0]
+        captured_piece_mask = (tokens == pad)
         first_axis_position = x[:, :, 1]
         second_axis_position = x[:, :, 2]
         token_embeddings = self.token_embedding(tokens) * math.sqrt(self.d_model)
         position_embeddings = self.encode_grid_position(first_axis_position, second_axis_position).requires_grad_(False)
-        return token_embeddings + position_embeddings
+        return token_embeddings + position_embeddings, captured_piece_mask
 
     def encode_grid_position(self, first_axis_position, second_axis_position):
         first_axis_embedding = self.pe[first_axis_position]

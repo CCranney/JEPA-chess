@@ -1,1 +1,1 @@
-ALL_PIECES = 'XpPrRnNbBqQkK' # X indicates a captured (blank) piece.
+ALL_PIECES = 'XpPrRnNbBqQkK' # X indicates a captured (blank) piece. Position 0 is a target for masking.

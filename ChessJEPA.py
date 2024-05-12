@@ -15,11 +15,11 @@ class ChessJEPA(JEPA, pl.LightningModule):
         super().to(device)
         self.loss_calculators['vicreg'].expander.to(device)
 
-    def encode_x(self, x):
-        return self.context_encoder(x)
+    def encode_x(self, x, captured_piece_mask):
+        return self.context_encoder(x, src_key_padding_mask=captured_piece_mask)
 
-    def encode_y(self, y):
-        return self.target_encoder(y)
+    def encode_y(self, y, captured_piece_mask):
+        return self.target_encoder(y, src_key_padding_mask=captured_piece_mask)
 
     def predict_encoded_y(self, encoded_x, z):
         encoded_x_flat = encoded_x.view(-1, encoded_x.shape[-2] * encoded_x.shape[-1])
@@ -32,15 +32,15 @@ class ChessJEPA(JEPA, pl.LightningModule):
         return variance_loss + covariance_loss + invariance_loss
 
     def forward(self, x, z):
-        embedded_x = self.board_state_embedder(x)
-        encoded_x = self.encode_x(embedded_x)
+        embedded_x, captured_piece_mask = self.board_state_embedder(x)
+        encoded_x = self.encode_x(embedded_x, captured_piece_mask)
         predicted_encoded_y = self.predict_encoded_y(encoded_x, z)
         return encoded_x, predicted_encoded_y
 
     def training_step(self, batch, batch_idx):
         x, y, z = batch
         encoded_x, predicted_encoded_y = self(x, z)
-        encoded_y = self.encode_y(self.board_state_embedder(y))
+        encoded_y = self.encode_y(*self.board_state_embedder(y))
         loss = self.get_loss(encoded_x, encoded_y, predicted_encoded_y)
         return loss
 
@@ -51,7 +51,7 @@ class ChessJEPA(JEPA, pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y, z = batch
         encoded_x, predicted_encoded_y = self(x, z)
-        encoded_y = self.encode_y(self.board_state_embedder(y))
+        encoded_y = self.encode_y(*self.board_state_embedder(y))
         loss = self.get_loss(encoded_x, encoded_y, predicted_encoded_y)
         return loss
 
