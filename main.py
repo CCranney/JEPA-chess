@@ -12,10 +12,12 @@ def run_passthrough_job():
     dataModule = ChessDataModule('data/all_with_filtered_anotations_since1998.txt', maxGames=100)
     d_model = 128
     action_size = 4
+    num_pieces = 32
+    expansion_scale = 4
     encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=8)
     transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=6)
     predictor = nn.RNNCell(input_size=action_size, hidden_size=32*d_model)
-    expander = nn.Identity()
+    expander = nn.Linear(num_pieces*d_model, num_pieces*d_model*expansion_scale)
     loss_calculators = {'vicreg': VICRegLossDotCalculator(expander)}
     model = ChessJEPA(transformer_encoder, predictor, loss_calculators, PieceEmbedding(d_model=d_model))
     trainer = Trainer(

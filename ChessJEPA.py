@@ -11,6 +11,10 @@ class ChessJEPA(JEPA, pl.LightningModule):
         for param in self.target_encoder.parameters():
             param.requires_grad = False
 
+    def to(self, device):
+        super().to(device)
+        self.loss_calculators['vicreg'].expander.to(device)
+
     def encode_x(self, x):
         return self.context_encoder(x)
 
