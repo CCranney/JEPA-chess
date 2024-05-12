@@ -3,10 +3,13 @@ import pytorch_lightning as pl
 import torch
 
 class ChessJEPA(JEPA, pl.LightningModule):
-    def __init__(self, context_encoder, predictor, loss_calculator, board_state_embedder):
+    def __init__(self, context_encoder, predictor, loss_calculator, board_state_embedder, tau=0.01):
         super(ChessJEPA, self).__init__(context_encoder, predictor, loss_calculator)
         self.board_state_embedder = board_state_embedder
         self.learning_rate = 0.0001 # placeholder
+        self.tau = tau  # moving average decay rate (to update target_encoder directly from context_encoder with moving averages instead of backprop)
+        for param in self.target_encoder.parameters():
+            param.requires_grad = False
 
     def encode_x(self, x):
         return self.context_encoder(x)
@@ -36,6 +39,10 @@ class ChessJEPA(JEPA, pl.LightningModule):
         encoded_y = self.encode_y(self.board_state_embedder(y))
         loss = self.get_loss(encoded_x, encoded_y, predicted_encoded_y)
         return loss
+
+    def on_train_batch_end(self, outputs, batch, batch_idx):
+        for param, target_param in zip(self.context_encoder.parameters(), self.target_encoder.parameters()):
+            target_param.data = (1 - self.tau) * target_param.data + self.tau * param.data
 
     def validation_step(self, batch, batch_idx):
         x, y, z = batch
