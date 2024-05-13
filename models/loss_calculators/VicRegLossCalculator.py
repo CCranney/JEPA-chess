@@ -3,7 +3,7 @@ import torch
 from torch.nn import functional as F
 from abstractjepa.loss import VICRegLoss
 
-class VICRegLossDotCalculator(VICRegLoss):
+class VICRegLossCalculator(VICRegLoss):
 
     def calculate_variance(self, normalized_expanded_representation):
         std = torch.sqrt(normalized_expanded_representation.var(dim=0) + 0.0001)
