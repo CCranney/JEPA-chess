@@ -1,5 +1,7 @@
 # JEPA-chess
 
+This repository has a single contributor so far, but the intent is to expand to any interested parties. If interested in contributing/collaborating, please reach out to @CCranney.
+
 ## Autonomous Machine Intelligence - World Models
 
 In 2022, Yann LeCun published a paper outlining "[A path towards autonomous machine intelligence.](https://openreview.net/pdf?id=BZ5a1r-kVsf)" Here LeCun outlined some of the pitfalls of modern AI development that serve as obstacles to developing true, common-sense intelligence. He further suggests various methods for overcoming those obstacles in future development. Much of the paper is theoretical, indicating areas of intelligence that have little in the way of current functional machine learning models. However, LeCun proposes and outlines a specific model architecture that could address one of the largest deficiencies in common-sense intelligence, the world model. The architecture is the Joint Embedding Predictive Architure, or JEPA. Its purpose is to create an abstract representation of the world that can serve as a reference for safe experimentation space outside the real world, much like how one can simulate and refine a sentence in their thoughts before actually speaking it out loud.
